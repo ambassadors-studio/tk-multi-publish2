@@ -357,7 +357,14 @@ class Item(object):
         success = self.thumbnail.save(temp_path)
 
         if success:
-            self._created_temp_files.append(temp_path)
+            if os.path.getsize(temp_path) > 0:
+                self._created_temp_files.append(temp_path)
+            else:
+                logger.debug(
+                    "A zero-size thumbnail was written for %s, "
+                    "no thumbnail will be uploaded." % self.name
+                )
+                return None
             return temp_path
         else:
             logger.warning(
