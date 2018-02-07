@@ -228,7 +228,7 @@ class AppDialog(QtGui.QWidget):
         self.ui.items_tree.set_plugin_manager(self._plugin_manager)
 
         # this is the pixmap in the summary thumbnail
-        self._summary_thumbnail = None 
+        self._summary_thumbnail = None
 
         # set publish button text
         self._display_action_name = self._bundle.get_setting("display_action_name")
@@ -501,12 +501,12 @@ class AppDialog(QtGui.QWidget):
         # the "else" below means if this is a publish item
         else:
             self._current_item.description = comments
-            
+
             # <multiple values> placeholder text should not appear for individual items
             self.ui.item_comments._show_placeholder = False
 
-            # if at least one task has a comment that is different than the summary description, set 
-            # <multiple values> indicator to true 
+            # if at least one task has a comment that is different than the summary description, set
+            # <multiple values> indicator to true
             if self._summary_comment != comments:
                 self._summary_comment_multiple_values = True
 
@@ -524,10 +524,10 @@ class AppDialog(QtGui.QWidget):
                     top_level_item.thumbnail = self._summary_thumbnail
                     top_level_item.thumbnail_explicit = False
                     top_level_item._propagate_thumbnail_to_children()
-        else: 
+        else:
             self._current_item.thumbnail = pixmap
             # specify that the new thumbnail overrides the one inherited from summary
-            self._current_item.thumbnail_explicit = True 
+            self._current_item.thumbnail_explicit = True
 
 
     def _create_item_details(self, tree_item):
@@ -568,10 +568,10 @@ class AppDialog(QtGui.QWidget):
         # unless item thumbnail was set after summary thumbnail
         if self._summary_thumbnail and not item.thumbnail_explicit:
             item.thumbnail = self._summary_thumbnail
-        
+
         self.ui.item_thumbnail._set_multiple_values_indicator(False)
         self.ui.item_thumbnail.set_thumbnail(item.thumbnail)
-        
+
 
         # Items with default thumbnails should still be able to have override thumbnails set by the user
         self.ui.item_thumbnail.setEnabled(True)
@@ -638,18 +638,18 @@ class AppDialog(QtGui.QWidget):
            if top_level_item._get_thumbnail_explicit_recursive():
                thumbnail_is_multiple_values = True
                break
-      
+
         self.ui.item_thumbnail._set_multiple_values_indicator(thumbnail_is_multiple_values)
         self.ui.item_thumbnail.set_thumbnail(self._summary_thumbnail)
 
-        # setting enabled to true to be able to take a snapshot to define the thumbnail 
+        # setting enabled to true to be able to take a snapshot to define the thumbnail
         self.ui.item_thumbnail.setEnabled(True)
 
         self.ui.item_description_label.setText("Description for all items")
         self.ui.item_comments.setPlainText(self._summary_comment)
 
         # the item_comments PublishDescriptionFocus won't display placeholder text if it is in focus
-        # so clearing the focus from that widget in order to see the <multiple values> warning once 
+        # so clearing the focus from that widget in order to see the <multiple values> warning once
         # the master summary details page is opened
         self.ui.item_comments.clearFocus()
         self.ui.item_comments._show_placeholder = self._summary_comment_multiple_values
@@ -1067,6 +1067,15 @@ class AppDialog(QtGui.QWidget):
                 self._progress_handler.push("Running finalizing pass")
                 try:
                     self._visit_tree_r(parent, lambda child: child.finalize(), "Finalizing")
+                except RuntimeError, e:
+                    if "c++" in str(e).lower():
+                        logger.warning("UI error occured, ignoring it for now: \n{}".format(traceback.format_exc(),))
+                    else:
+                        # ensure the full error shows up in the log file
+                        logger.error("Finalize error stack:\n%s" % (traceback.format_exc(),))
+                        # and log to ui
+                        self._progress_handler.logger.error("Error while finalizing. Aborting.")
+                        publish_failed = True
                 except Exception, e:
                     # ensure the full error shows up in the log file
                     logger.error("Finalize error stack:\n%s" % (traceback.format_exc(),))
