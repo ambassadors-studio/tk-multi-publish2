@@ -82,6 +82,7 @@ class PublishItem(object):
         "_persistent",
         "_tasks",
         "_thumbnail_enabled",
+        "_thumbnail_shown",
         "_thumbnail_explicit",
         "_thumbnail_path",
         "_thumbnail_pixmap",
@@ -118,6 +119,7 @@ class PublishItem(object):
         new_item._expanded = item_dict["expanded"]
         new_item._icon_path = item_dict["icon_path"]
         new_item._thumbnail_enabled = item_dict["thumbnail_enabled"]
+        new_item._thumbnail_shown = item_dict["thumbnail_shown"]
         new_item._thumbnail_explicit = item_dict["thumbnail_explicit"]
         new_item._thumbnail_path = item_dict["thumbnail_path"]
 
@@ -197,6 +199,7 @@ class PublishItem(object):
         self._persistent = False
         self._tasks = []
         self._thumbnail_enabled = True
+        self._thumbnail_shown = True
         self._thumbnail_explicit = True
         self._thumbnail_path = None
         self._thumbnail_pixmap = None
@@ -254,6 +257,7 @@ class PublishItem(object):
             "persistent": self.persistent,
             "tasks": [t.to_dict() for t in self._tasks],
             "thumbnail_enabled": self._thumbnail_enabled,
+            "thumbnail_shown": self._thumbnail_shown,
             "thumbnail_explicit": self._thumbnail_explicit,
             "thumbnail_path": self._thumbnail_path,
             "type_display": self.type_display,
@@ -909,6 +913,9 @@ class PublishItem(object):
             should not be confused with the item's :py:attr:`~icon` which is for
             use only in the publisher UI and is a small representation of the
         """
+        if not self.thumbnail_shown:
+            return None
+
         return self._get_image(
             get_img_path=lambda: self._thumbnail_path,
             get_pixmap=lambda: self._thumbnail_pixmap,
@@ -945,6 +952,22 @@ class PublishItem(object):
     def thumbnail_enabled(self, enabled):
         # setter for thumbnail_enabled
         self._thumbnail_enabled = enabled
+
+    @property
+    def thumbnail_shown(self):
+        """
+        Boolean property to indicate whether thumbnails are shown in the UI.
+        When ``False``, the UI won't try to show the thumbnail internally,
+        this skips processing the given thumbnail paths.
+
+        This will override the UI behaviour of `thumbnail_enabled`.
+        """
+        return self._thumbnail_shown
+
+    @thumbnail_shown.setter
+    def thumbnail_shown(self, shown):
+        # setter for thumbnail_shown
+        self._thumbnail_shown = shown
 
     @property
     def thumbnail_explicit(self):

@@ -28,6 +28,7 @@ class PublishManager(object):
         "_tree",
         "_collector_instance",
         "_processed_contexts",
+        "_bundle_context_plugins",
         "_post_phase_hook"
     ]
 
@@ -38,6 +39,7 @@ class PublishManager(object):
     CONFIG_COLLECTOR_SETTINGS = "collector_settings"
     CONFIG_PLUGIN_DEFINITIONS = "publish_plugins"
     CONFIG_POST_PHASE_HOOK_PATH = "post_phase"
+    CONFIG_FORCE_BUNDLE_PLUGINS = "force_bundle_plugins"
 
     ############################################################################
     # special item property keys
@@ -75,6 +77,7 @@ class PublishManager(object):
 
         # a lookup of context to publish plugins.
         self._processed_contexts = {}
+        self._bundle_context_plugins = []
 
         # initialize the collector plugin
         logger.debug("Loading collector plugin...")
@@ -430,20 +433,26 @@ class PublishManager(object):
         and add any matching tasks. If any tasks exist on the supplied items,
         they will be removed.
         """
+        use_bundle_plugins = self._bundle.get_setting(self.CONFIG_FORCE_BUNDLE_PLUGINS)
         for item in items:
-
             # clear existing tasks for this item
             item.clear_tasks()
 
             logger.debug("Processing item: %s" % (item,))
 
-            item_context = item.context
+            if not use_bundle_plugins:
+                item_context = item.context
 
-            context_plugins = self._load_publish_plugins(item_context)
-            logger.debug(
-                "Offering %s plugins for context: %s" %
-                (len(context_plugins), item_context)
-            )
+                context_plugins = self._load_publish_plugins(item_context)
+                logger.debug(
+                    "Offering %s plugins for context: %s" %
+                    (len(context_plugins), item_context)
+                )
+            else:
+                context_plugins = self._bundle_context_plugins
+                logger.debug(
+                    "Offering bundle plugins"
+                )
 
             for context_plugin in context_plugins:
 
@@ -518,6 +527,7 @@ class PublishManager(object):
             return self._processed_contexts[context]
 
         engine = self._bundle.engine
+        is_bundle_context = False
 
         if context == self._bundle.context:
             # if the context matches the bundle, we don't need to do any extra
@@ -526,6 +536,7 @@ class PublishManager(object):
                 "Finding publish plugin settings for context: %s" % (context,))
             plugin_settings = self._bundle.get_setting(
                 self.CONFIG_PLUGIN_DEFINITIONS)
+            is_bundle_context = True
         else:
             # load the plugins from the supplied context. this means executing
             # the pick environment hook and reading from disk. this is why we
@@ -584,6 +595,8 @@ class PublishManager(object):
 
         # ensure the plugins are cached
         self._processed_contexts[context] = plugins
+        if is_bundle_context:
+            self._bundle_context_plugins = plugins
 
         return plugins
 
