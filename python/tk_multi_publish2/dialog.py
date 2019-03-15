@@ -254,7 +254,7 @@ class AppDialog(QtGui.QWidget):
         self.ui.browse.setVisible(self.manual_load_enabled)
 
         # run collections
-        self._full_rebuild()
+        #self._full_rebuild()
 
     @property
     def manual_load_enabled(self):
@@ -556,7 +556,12 @@ class AppDialog(QtGui.QWidget):
         self.ui.item_type.setText(item.type_display)
 
         # check the state of screenshot
-        if item.thumbnail_enabled:
+        if not item.thumbnail_shown:
+            # hide thumbnail
+            self.ui.item_thumbnail_label.hide()
+            self.ui.item_thumbnail.hide()
+
+        elif item.thumbnail_enabled:
             # display and make thumbnail editable
             self.ui.item_thumbnail_label.show()
             self.ui.item_thumbnail.show()
@@ -729,6 +734,8 @@ class AppDialog(QtGui.QWidget):
             "Collecting items to %s..." %
             (self._display_action_name)
         )
+        QtGui.QApplication.setOverrideCursor(QtGui.QCursor(QtCore.Qt.WaitCursor))
+        QtGui.QApplication.processEvents()
 
         previously_collected_files = self._publish_manager.collected_files
         self._publish_manager.tree.clear(clear_persistent=True)
@@ -764,6 +771,8 @@ class AppDialog(QtGui.QWidget):
 
         # reset the validation flag
         self._validation_run = False
+
+        QtGui.QApplication.restoreOverrideCursor()
 
     def _on_drop(self, files):
         """
